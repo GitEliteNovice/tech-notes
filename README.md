@@ -205,3 +205,6 @@ No Git for Mappings: Do not commit mapping.txt to version control. Store it as a
 Auto-Retrace: Always upload mapping.txt to the Google Play Console or Firebase Crashlytics during release for automatic dashboard de-obfuscation.
 
 SDK Tools: Ensure "Android SDK Command-line Tools" are installed via the SDK Manager to access retrace.bat
+
+#### For detailed info, read from here: https://developer.android.com/topic/performance/app-optimization/enable-app-optimization
+
