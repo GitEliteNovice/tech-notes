@@ -66,5 +66,25 @@ Interfaces cannot be initialized, so they cannot have constructors.
 - You need to manage internal state (properties that change over time).[cite: 1]
 - You want to provide a restricted template for how subclasses should be initialized.[cite: 1]
 
-The Golden Rule: Start with an Interface. Move to an Abstract Class only if you require a shared constructor or need to maintain private internal state.
+### 5. Why Android Prefers Interfaces (Official Context)
+According to official Android architectural patterns and Kotlin best practices, interfaces are preferred for the following reasons:
+
+#### 🚀 Reason 1: The "Fragile Base Class" Problem
+In Android, if you rely heavily on deep abstract class hierarchies (Inheritance), a small change in a base class (like a BaseFragment) can accidentally break logic in dozens of child classes.
+
+The Interface Solution: Interfaces provide a "flat" structure. Changing one interface doesn't ripple through a whole family tree, making your app much easier to maintain.  
+
+#### 🧩 Reason 2: Multiple Contract Implementation
+Since Java and Kotlin do not support Multiple Inheritance (you can't extend two classes), using an abstract class locks you in.
+
+The Interface Solution: A single ViewModel or Repository can implement IAnalytics, ILogger, and IDataSource all at once. This flexibility is core to Modularization.  
+
+#### 🧪 Reason 3: Testing & Mocking
+Android's testing documentation heavily emphasizes Dependency Injection (DI).
+
+The Interface Solution: It is significantly easier for testing frameworks to create a "Mock" of an interface than to mock a complex abstract class that might have hidden logic or lifecycle dependencies.
+
+
+#### The Golden Rule: 
+Start with an Interface. Move to an Abstract Class only if you require a shared constructor or need to maintain private internal state.
       
