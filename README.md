@@ -88,3 +88,120 @@ The Interface Solution: It is significantly easier for testing frameworks to cre
 #### The Golden Rule: 
 Start with an Interface. Move to an Abstract Class only if you require a shared constructor or need to maintain private internal state.
       
+
+
+
+
+
+
+
+# Tech Notes: Android R8, Obfuscation, and De-obfuscation Workflow
+
+**Date:** May 14, 2026  
+**Author:** Aryan Dhankar
+
+## 1. Overview of R8 in Android
+R8 is the default compiler for Android that converts Java bytecode into optimized DEX code. It handles four critical tasks in a single step:
+
+* **Code Shrinking (Tree Shaking):** Analyzes the code and removes unreachable classes, fields, and methods.
+* **Resource Shrinking:** Identifies unused resources in the app and removes them from the APK/Bundle.
+* **Obfuscation:** Renames classes and members with short, meaningless names (e.g., `ln.c`) to reduce file size and increase security.
+* **Optimization:** Rewrites code to improve runtime performance (e.g., method inlining, dead code removal).
+
+## 2. Project Configuration
+To enable R8 and full obfuscation for testing, update the `app/build.gradle` file:
+
+          ```gradle
+          android {
+              buildTypes {
+                  release {
+                      minifyEnabled true
+                      shrinkResources true
+                      proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+                  }
+              }
+          }
+
+
+### Advanced Scrambling Settings
+To force R8 to remove line numbers and source file attributes (useful for testing manual retrace), add these to your proguard-rules.pro:
+
+#Remove attributes that make logs readable
+-keepattributes !SourceFile,!LineNumberTable
+
+#Force R8 to rename all methods/classes not explicitly kept
+-repackageclasses ''
+-allowaccessmodification
+
+## 3. Generating the Signed Release APK
+Android devices reject unsigned release builds. You must sign the APK to install it:
+
+Go to Build > Generate Signed Bundle / APK....
+
+Select APK and provide your Keystore credentials.
+
+Select the release variant.
+
+Ensure V1 (Jar Signature) and V2 (Full APK Signature) are both checked to ensure compatibility with older and newer Android versions.
+
+## 4. Capturing Obfuscated Crash Logs
+Once the signed app is installed and crashes, you can view the logs in two ways:
+
+Android Studio Logcat:
+
+Connect the device and filter for Error level logs.
+
+You will see obfuscated identifiers (e.g., at ln.c(...)).
+
+Copy these logs into a crash_log.txt for manual retracing.
+
+Firebase Crashlytics:
+
+If integrated, Firebase will capture the crash automatically.
+
+Crucial Step: You must upload your mapping.txt to the Firebase Console.
+
+Once uploaded, Firebase uses the mapping file to show you readable method names directly in the dashboard.
+
+## 5. De-obfuscation (Retracing) Workflow :The Retracing Command (Manual)
+If you are analyzing local logs, run this command in your terminal:
+
+When a release build crashes, the stack trace is obfuscated. Use the mapping.txt file to translate it.
+
+### Step A: Locate the Mapping File
+R8 generates the mapping file during every release build at:
+
+app/build/outputs/mapping/release/mapping.txt
+
+### Step B: Capture and Save the Crash
+Trigger the crash on your device.
+
+Filter for errors in Logcat.
+
+Save the raw logs to a file: C:\\Users\\PC\\Desktop\\crash_log.txt.
+
+### Step C: Execute Retrace via CMD
+Run the retrace utility and redirect the output to a readable file for analysis:
+
+#### Command structure for Windows
+C:\\Users\\PC\\AppData\\Local\\Android\\Sdk\\cmdline-tools\\latest\\bin\\retrace.bat ^
+"C:\\Path\\To\\Your\\Project\\app\\build\\outputs\\mapping\\release\\mapping.txt" ^
+"C:\\Users\\PC\\Desktop\\crash_log.txt" > "C:\\Users\\PC\\Desktop\\crash_log_readable.txt"
+
+#### Command Breakdown:
+
+- retrace.bat: The executable script that performs the de-obfuscation logic.
+- mapping.txt: The "translation key" generated during the release build.   
+- crash_log.txt: The raw, obfuscated file containing the "alphabet soup" logs (e.g., at ln.c).   
+- >: The redirection operator that sends the output to a file instead of the screen.
+- crash_log_readable.txt: The final output file containing your original method names and line numbers. [cite: 1]
+
+
+## 5. Summary & Best Practices
+Unique Mappings: Every single APK/Bundle build has its own unique mapping.txt. Never mix them up.
+
+No Git for Mappings: Do not commit mapping.txt to version control. Store it as a build artifact.
+
+Auto-Retrace: Always upload mapping.txt to the Google Play Console or Firebase Crashlytics during release for automatic dashboard de-obfuscation.
+
+SDK Tools: Ensure "Android SDK Command-line Tools" are installed via the SDK Manager to access retrace.bat
